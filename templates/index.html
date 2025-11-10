@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Triage Companion - Prototype</title>
+    <style>
+      /* Basic CSS to match the mockup concept */
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        min-height: 100vh;
+        margin: 0;
+        background: #f4f4f9;
+      }
+      #app-container {
+        display: flex;
+        width: 95%;
+        max-width: 1400px;
+        margin: 20px auto;
+        background: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      #chat-window {
+        flex-grow: 3;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+      }
+      #status-panel {
+        flex-grow: 1;
+        min-width: 300px;
+        padding: 20px;
+        background: #e9f0f7;
+      }
+      h2 {
+        color: #004d99;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+      }
+      h3,
+      h4 {
+        color: #333;
+      }
+
+      /* Message Display */
+      #message-display {
+        flex-grow: 1;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+      .patient-message {
+        background: #d0e7ff;
+        padding: 12px;
+        border-radius: 18px 18px 18px 4px;
+        margin-bottom: 10px;
+        max-width: 75%;
+        align-self: flex-start;
+        line-height: 1.4;
+      }
+      .user-message {
+        background: #f0f0f0;
+        padding: 12px;
+        border-radius: 18px 18px 4px 18px;
+        margin-bottom: 10px;
+        max-width: 75%;
+        align-self: flex-end;
+        line-height: 1.4;
+      }
+
+      /* Input Form */
+      #input-form {
+        display: flex;
+        margin-top: 10px;
+      }
+      #user-input {
+        flex-grow: 1;
+        padding: 12px;
+        border: 1px solid #007bff;
+        border-radius: 6px 0 0 6px;
+        font-size: 16px;
+      }
+      #send-btn {
+        padding: 12px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 0 6px 6px 0;
+        font-size: 16px;
+        transition: background 0.2s;
+      }
+      #send-btn:hover:not(:disabled) {
+        background: #0056b3;
+      }
+      #send-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      /* Status Panel Components */
+      .status-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      #progress-bar {
+        width: 100%;
+        height: 25px;
+        background-color: #ddd;
+        border-radius: 12px;
+        margin-top: 10px;
+        overflow: hidden;
+      }
+      #progress-fill {
+        height: 100%;
+        width: 0%;
+        background-color: #28a745; /* Success Green */
+        border-radius: 12px;
+        transition: width 0.5s ease-in-out;
+        text-align: center;
+        line-height: 25px;
+        color: white;
+        font-weight: bold;
+      }
+      #live-feedback {
+        font-style: italic;
+        color: #cc0000;
+        font-weight: bold;
+      }
+
+      /* Case Selection */
+      #case-selector {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+      #start-simulation-btn {
+        width: 100%;
+        padding: 10px;
+        background: #ffc107; /* Yellow/Orange for start */
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      #start-simulation-btn:hover:not(:disabled) {
+        background: #e0a800;
+      }
+      #start-simulation-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <div id="status-panel">
+        <h2>🩺 Triage Training Panel</h2>
+
+        <div class="status-section">
+          <h4>Case Selection</h4>
+          <select id="case-selector" disabled>
+            <option value="">--- Select Patient Case ---</option>
+
+            {% for case in cases %}
+            <option value="{{ case.id }}">
+              {{ case.name }} ({{ case.complaint }})
+            </option>
+            {% endfor %}
+          </select>
+          <button id="start-simulation-btn" disabled>Start Simulation</button>
+          <p style="font-size: 0.85em; margin-top: 10px">
+            Select a case to begin. Conversation history resets on start.
+          </p>
+        </div>
+
+        <div class="status-section">
+          <h4>📊 Real-Time Status</h4>
+          <p>
+            <strong>Patient:</strong>
+            <span id="patient-name" style="font-weight: bold">---</span>
+          </p>
+          <p>
+            <strong>ESI Goal:</strong> Level
+            <span id="esi-goal" style="font-weight: bold">---</span>
+          </p>
+
+          <h4 style="margin-top: 15px">
+            Performance Score: <span id="performance-score">0</span> / 100
+          </h4>
+          <div id="progress-bar">
+            <div id="progress-fill">0%</div>
+          </div>
+
+          <p style="margin-top: 15px">
+            <strong>Live Feedback:</strong>
+            <span id="live-feedback">Simulation not started.</span>
+          </p>
+        </div>
+      </div>
+
+      <div id="chat-window">
+        <h2>
+          Case: <span id="current-case-title">Select a Case to Begin</span>
+        </h2>
+        <div id="message-display">
+          <p
+            class="patient-message"
+            style="align-self: center; background: #eee"
+          >
+            **Welcome to the Triage Training Companion.**<br />
+            Please select a patient case from the panel on the left and click
+            'Start Simulation'.
+          </p>
+        </div>
+        <form id="input-form">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Ask your triage question (e.g., When did the pain start?)"
+            required
+            disabled
+          />
+          <button type="submit" id="send-btn" disabled>Send</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      let currentSessionId = null;
+      const inputForm = document.getElementById("input-form");
+      const messageDisplay = document.getElementById("message-display");
+      const userInput = document.getElementById("user-input");
+      const sendBtn = document.getElementById("send-btn");
+      const startBtn = document.getElementById("start-simulation-btn");
+      const caseSelector = document.getElementById("case-selector");
+
+      // Status Panel Elements
+      const scoreSpan = document.getElementById("performance-score");
+      const progressBarFill = document.getElementById("progress-fill");
+      const liveFeedbackSpan = document.getElementById("live-feedback");
+      const patientNameSpan = document.getElementById("patient-name");
+      const esiGoalSpan = document.getElementById("esi-goal");
+      const caseTitleSpan = document.getElementById("current-case-title");
+
+      // Initial setup to enable controls once cases are loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check if Flask loaded any cases (via the Jinja template loop)
+        if (caseSelector.options.length > 1) {
+          caseSelector.disabled = false;
+          startBtn.disabled = false;
+          caseSelector.options[0].textContent = "--- Select Patient Case ---";
+        }
+      });
+
+      // Helper function to append a message to the chat
+      function appendMessage(role, text) {
+        const div = document.createElement("div");
+        div.className = role === "user" ? "user-message" : "patient-message";
+        div.textContent = text;
+        messageDisplay.appendChild(div);
+        messageDisplay.scrollTop = messageDisplay.scrollHeight; 
+      }
+
+      // Function to update the score display and progress bar
+      function updateScore(score, feedback) {
+        scoreSpan.textContent = score;
+        // Cap score at 100 for display
+        const progress = Math.min(score, 100);
+        progressBarFill.style.width = progress + "%";
+        progressBarFill.textContent = progress + "%";
+        liveFeedbackSpan.textContent = feedback || "Awaiting key finding...";
+
+        // Change color for high score
+        progressBarFill.style.backgroundColor =
+          progress >= 75 ? "#157347" : "#28a745";
+      }
+
+      // 1. START SIMULATION
+      startBtn.addEventListener("click", async () => {
+        const caseId = caseSelector.value;
+        if (!caseId) {
+          alert("Please select a patient case first!");
+          return;
+        }
+
+        // Lock controls during fetch
+        startBtn.disabled = true;
+        caseSelector.disabled = true;
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+
+        try {
+          const response = await fetch("/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ case_id: caseId }),
+          });
+
+          const data = await response.json();
+
+          if (data.session_id) {
+            currentSessionId = data.session_id;
+
+            // Reset UI
+            messageDisplay.innerHTML = "";
+            caseTitleSpan.textContent = `${data.patient_name} - ESI Level ${data.esi_goal}`;
+            patientNameSpan.textContent = data.patient_name;
+            esiGoalSpan.textContent = `Level ${data.esi_goal}`;
+
+            // Enable interaction
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+
+            updateScore(
+              data.initial_score,
+              "Simulation started. Listen to the patient and ask your first question."
+            );
+            appendMessage("patient", data.patient_text);
+            userInput.focus();
+            startBtn.textContent = "Restart Simulation";
+          } else {
+            alert(
+              "Error starting session: " + (data.error || "Unknown error.")
+            );
+          }
+        } catch (error) {
+          alert(
+            "Network error or server connection failed. See console for details."
+          );
+          console.error("Start session error:", error);
+        } finally {
+          // Unlock only if successful, or prepare to allow restart
+          startBtn.disabled = false;
+          caseSelector.disabled = false;
+        }
+      });
+
+      // 2. CONVERSATIONAL TURN
+      inputForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!currentSessionId) return;
+
+        const userText = userInput.value;
+        if (!userText.trim()) return;
+
+        appendMessage("user", userText);
+        userInput.value = "";
+        sendBtn.disabled = true;
+        userInput.disabled = true;
+
+        try {
+          const response = await fetch("/triage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: currentSessionId,
+              message: userText,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.patient_text) {
+            appendMessage("patient", data.patient_text);
+            updateScore(data.current_score, data.real_time_feedback);
+          } else {
+            appendMessage(
+              "patient",
+              "Error: Could not get response from AI. Try refreshing the page or restarting the simulation."
+            );
+          }
+        } catch (error) {
+          appendMessage(
+            "patient",
+            "Network error or server connection failed."
+          );
+          console.error("Triage turn error:", error);
+        } finally {
+          sendBtn.disabled = false;
+          userInput.disabled = false;
+          userInput.focus();
+        }
+      });
+    </script>
+  </body>
+</html>
