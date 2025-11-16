@@ -2,25 +2,23 @@
 
 1. Navigate to your project folder
 
-Open a terminal (macOS/Linux) or Command Prompt/PowerShell (Windows) and change to your project directory:
-
-cd path/to/your/project
-
+Clone this git repository and open a terminal (macOS/Linux) or Command Prompt/PowerShell (Windows) and change to your project directory:
+```
+cd path/to/cloned/repo
+```
 2. Create the virtual environment
 
 Use the built-in venv module. 
-Python documentation
-+1
 
 macOS / Linux
-
+```
 python3 -m venv venv
-
+```
 
 Windows
-
+```
 py -m venv venv
-
+```
 
 This creates a folder named venv (you can choose a different name) containing the isolated Python environment.
 
@@ -30,38 +28,35 @@ Activating ensures that any python or pip commands refer to this environment.
 Python Packaging
 
 macOS / Linux (bash/zsh)
-
+```
 source venv/bin/activate
-
+```
 
 Windows (Command Prompt)
-
+```
 venv\Scripts\activate.bat
-
+```
 
 Windows (PowerShell)
-
+```
 .\venv\Scripts\Activate.ps1
-
+```
 
 When activated, your prompt will typically include (venv) as a prefix, indicating you are inside the environment.
 
-4. Upgrade pip (optional but recommended)
-pip install --upgrade pip
-
-5. Install dependencies from requirements.txt
+4. Install dependencies from requirements.txt
 
 Assuming you’ve created requirements.txt with all needed packages:
-
+```
 pip install -r requirements.txt
-
+```
 
 This installs all the exact versions of libraries your project needs.
 
-6. Run the application
+5. Run the application
 
 Then you can execute your Flask app (or whatever entry script you have) while the virtual environment is active:
-
+```
 python app.py
 
 ```
