@@ -40,38 +40,73 @@ Begin the simulation. Introduce yourself and state your initial complaint.
 """
 
 PATIENT_CASES = {
-    "case_alex_chen": {
-        "name": "Alex Chen",
-        "age": 45,
-        "sex": "Male",  # ⬅ NEW
-        "esi_level": 1,
-        "chief_complaint": "Severe, sudden-onset headache (worst ever) and neck stiffness.",
-        "initial_line": "Hello, I'm Alex Chen. I have the worst headache of my life, it started about an hour ago.",
-        "hot_clues": "'worst headache of life', 'sudden onset', 'neck stiffness', 'vomiting', 'photophobia'.",
-        "scoring_rule": "Award +30 points for asking about any Hot Clue. Deduct -15 points for asking three or more irrelevant questions."
-    },
-
-    "case_jenny_smith": {
-        "name": "Jenny Smith",
-        "age": 22,
-        "sex": "Female",  # ⬅ NEW
-        "esi_level": 3,
-        "chief_complaint": "Persistent cough and fever for three days, mild shortness of breath.",
-        "initial_line": "Hi, I've had this bad cough and a fever for a few days now. I feel tired and a bit short of breath.",
-        "hot_clues": "'duration of symptoms', 'recent travel or large crowds', 'O2 saturation check', 'history of asthma/smoking'.",
-        "scoring_rule": "Award +25 points for asking about any Hot Clue. Deduct -5 points for asking about pain level repeatedly."
-    },
-
-    "case_roya_parsa": {
-        "name": "Roya Parsa",
-        "age": 68,
-        "sex": "Female",  # ⬅ NEW
+    "case_pregnant_abdominal_pain": {
+        "name": "Angie Smith",
+        "age": 26,
+        "sex": "Female",
         "esi_level": 2,
-        "chief_complaint": "Sudden onset of left-sided weakness and slurred speech.",
-        "initial_line": "My name is Roya Parsa. I can barely talk and I can't feel my left arm. It started about 30 minutes ago.",
-        "hot_clues": "'Time of onset (Last Known Well)', 'speech quality', 'facial droop', 'arm/leg strength comparison'.",
-        "scoring_rule": "Award +40 points for establishing the time of onset or asking a key stroke symptom. Deduct -20 points for wasting time on routine history."
+        "chief_complaint": "3-day history of lower abdominal pain during 18-week pregnancy; new nausea, vomiting, fever, and urinary symptoms.",
+        "initial_line": "I’ve had lower belly pain for three days, and since last night I've been nauseous and vomiting. I feel feverish and weak. I'm 18 weeks pregnant.",
+
+        "hot_clues": (
+            "'fever', 'dysuria or urinary frequency', 'incomplete bladder emptying', "
+            "'nausea/vomiting', 'CVA tenderness', 'pregnancy status', 'hydration status'."
+        ),
+
+        "scoring_rule": (
+            "Award +40 points for asking about fever pattern, urinary symptoms, vomiting severity, "
+            "or flank/CVA tenderness. "
+            "Award +30 points for confirming pregnancy complications (vaginal bleeding, fetal movement, OB history). "
+            "Deduct -20 points for ignoring red flags like high fever, tachycardia, dehydration, or flank pain."
+        ),
+    },
+    "case_leg_erythema_pain": {
+        "name": "Tyler James",
+        "age": 62,
+        "sex": "Male",
+        "esi_level": 2,
+        "chief_complaint": "Progressively worsening pain and redness of the right lower leg for 2 days.",
+        "initial_line": (
+            "My right leg started hurting two days ago and it's gotten worse. "
+            "A few hours ago I started to feel sick all over—aches, chills. "
+            "The red area on my leg is getting bigger."
+        ),
+
+        "hot_clues": (
+            "'fever', 'rapid progression of redness', 'erythema borders', 'lymphangitic streaking', "
+            "'leg swelling asymmetry', 'recent saphenous vein harvest', 'diabetes history', "
+            "'pain out of proportion', 'crepitus', 'bullae'."
+        ),
+
+        "scoring_rule": (
+            "Award +40 points for asking about rate of progression, fever/chills, prior skin breaks, "
+            "or history of saphenous vein harvest. "
+            "Award +30 points for distinguishing cellulitis versus DVT (calf asymmetry, tenderness, risk factors). "
+            "Deduct -20 points for failing to evaluate for necrotizing soft tissue infection (pain severity, crepitus). "
+            "Deduct -15 points for ignoring cardiovascular or diabetes-related complications."
+        ),
+    },
+
+    "case_adolescent_back_pain": {
+        "name": "Alex Paul",
+        "age": 12,
+        "sex": "Male",
+        "esi_level": 3,
+        "chief_complaint": "Occasional mild upper-back pain and stiffness for ~1 year.",
+        "initial_line": "Sometimes my upper back hurts and feels stiff, especially in the morning, but mostly I'm fine.",
+        "hot_clues": (
+            "'pain onset during growth', 'shoulder asymmetry', 'forward-bend rib hump', "
+            "'family history of scoliosis', 'neurologic symptoms (weakness, gait change)', 'night pain', "
+            "'rapid progression of curve'."
+        ),
+        "scoring_rule": (
+            "Award +30 points for asking about physical exam signs (scoliosis screening, Adam’s forward-bend test), "
+            "or family history, or neurologic symptoms. "
+            "Award +20 points for ruling out red-flag symptoms (night pain, weight loss, bowel/bladder changes). "
+            "Deduct –15 points for focusing only on pain severity and ignoring structural assessment."
+        )
     }
+    
 }
 
 
