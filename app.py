@@ -2,6 +2,7 @@ import os
 import re
 import json
 import uuid
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from google import genai
@@ -42,6 +43,7 @@ PATIENT_CASES = {
     "case_alex_chen": {
         "name": "Alex Chen",
         "age": 45,
+        "sex": "Male",  # ⬅ NEW
         "esi_level": 1,
         "chief_complaint": "Severe, sudden-onset headache (worst ever) and neck stiffness.",
         "initial_line": "Hello, I'm Alex Chen. I have the worst headache of my life, it started about an hour ago.",
@@ -52,6 +54,7 @@ PATIENT_CASES = {
     "case_jenny_smith": {
         "name": "Jenny Smith",
         "age": 22,
+        "sex": "Female",  # ⬅ NEW
         "esi_level": 3,
         "chief_complaint": "Persistent cough and fever for three days, mild shortness of breath.",
         "initial_line": "Hi, I've had this bad cough and a fever for a few days now. I feel tired and a bit short of breath.",
@@ -62,6 +65,7 @@ PATIENT_CASES = {
     "case_roya_parsa": {
         "name": "Roya Parsa",
         "age": 68,
+        "sex": "Female",  # ⬅ NEW
         "esi_level": 2,
         "chief_complaint": "Sudden onset of left-sided weakness and slurred speech.",
         "initial_line": "My name is Roya Parsa. I can barely talk and I can't feel my left arm. It started about 30 minutes ago.",
@@ -69,6 +73,7 @@ PATIENT_CASES = {
         "scoring_rule": "Award +40 points for establishing the time of onset or asking a key stroke symptom. Deduct -20 points for wasting time on routine history."
     }
 }
+
 
 
 # Parse Gemini Response
@@ -108,7 +113,6 @@ def start_new_triage_session(case_id):
     if not case_data:
         raise ValueError(f"Case ID '{case_id}' not found.")
 
-    # Fill the general template with specific case details
     full_prompt = BASE_PROMPT_TEMPLATE.format(
         name=case_data["name"],
         esi_level=case_data["esi_level"],
@@ -117,24 +121,24 @@ def start_new_triage_session(case_id):
         scoring_rule=case_data["scoring_rule"]
     )
 
-    # Initialize the chat session
     chat = client.chats.create(model=MODEL_NAME)
-
-    # Send the system/persona prompt to set the context (history is updated)
     chat.send_message(full_prompt)
 
-    # Store the session data
     session_id = str(uuid.uuid4())
+
+    # Arrival time = when the triage session starts
+    arrival_time = datetime.now().strftime("%I:%M:%S %p")
+
     session_data[session_id] = {
         'chat': chat,
         'case_id': case_id,
         'current_score': 0,
         'patient_name': case_data["name"],
-        'esi_goal': case_data["esi_level"]
+        'esi_goal': case_data["esi_level"],
+        'arrival_time': arrival_time
     }
 
-    # The patient's initial line is already defined in the case data
-    return session_id, case_data["initial_line"], case_data
+    return session_id, case_data["initial_line"], case_data, arrival_time
 
 # --- API Endpoints ---
 @app.route('/')
@@ -170,8 +174,7 @@ def start_session():
         return jsonify({'error': 'No case ID provided'}), 400
 
     try:
-        session_id, initial_patient_text, case_data = start_new_triage_session(
-            case_id)
+        session_id, initial_patient_text, case_data, arrival_time = start_new_triage_session(case_id)
 
         return jsonify({
             'session_id': session_id,
@@ -179,13 +182,16 @@ def start_session():
             'case_id': case_id,
             'patient_name': case_data["name"],
             'esi_goal': case_data["esi_level"],
-            'initial_score': 0
+            'initial_score': 0,
+            'age': case_data["age"],
+            'sex': case_data["sex"],
+            'arrival_time': arrival_time,
+            'chief_complaint': case_data["chief_complaint"]
         })
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
     except Exception as e:
         return jsonify({'error': f"Server error starting session: {str(e)}"}), 500
-
 
 @app.route('/triage', methods=['POST'])
 def triage_turn():
@@ -226,6 +232,38 @@ def triage_turn():
         print(f"Error during triage turn for session {session_id}: {e}")
         return jsonify({'error': 'An internal error occurred during the conversation turn.'}), 500
 
+@app.route('/transcribe_audio', methods=['POST'])
+def transcribe_audio():
+    data = request.form  # Using form + files
+    session_id = data.get('session_id')
+    if session_id not in session_data:
+        return jsonify({'error': 'Invalid or expired session ID'}), 404
+
+    # Expect the audio file in request.files
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file uploaded'}), 400
+
+    audio_file = request.files['audio']
+    audio_bytes = audio_file.read()
+    mime_type = audio_file.mimetype or 'audio/wav'
+
+    try:
+        # You can upload using Files API if size >20MB
+        uploaded = client.files.upload(file=audio_bytes, mime_type=mime_type)
+
+        # Build prompt: ask to transcribe
+        prompt = "Please transcribe this audio recording of a triage question."
+
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=[prompt, uploaded]
+        )
+
+        transcript = response.text.strip()
+        return jsonify({'transcript': transcript})
+
+    except Exception as e:
+        return jsonify({'error': f"Error during transcription: {str(e)}"}), 500
 
 if __name__ == '__main__':
     print(f"Starting Triage Companion Backend on [http://127.0.0.1:5000](http://127.0.0.1:5000)")

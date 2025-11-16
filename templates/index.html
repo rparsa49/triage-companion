@@ -2,308 +2,681 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>AI Triage Companion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Triage Companion - Prototype</title>
+
+    <!-- Material-esque font & icons -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
     <style>
-      /* Basic CSS to match the mockup concept */
+      :root {
+        --bg: #f5ecff;
+        --surface: #ffffff;
+        --primary: #6200ee;
+        --primary-light: #bb86fc;
+        --primary-dark: #3700b3;
+        --error: #b00020;
+        --text-main: #1f1f1f;
+        --text-muted: #6b6b6b;
+        --shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.08);
+        --radius-card: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        display: flex;
-        min-height: 100vh;
         margin: 0;
-        background: #f4f4f9;
-      }
-      #app-container {
+        min-height: 100vh;
+        font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: var(--bg);
         display: flex;
-        width: 95%;
+        align-items: stretch;
+        justify-content: center;
+      }
+
+      #app-shell {
+        width: 100%;
         max-width: 1400px;
-        margin: 20px auto;
-        background: white;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        border-radius: 12px;
-        overflow: hidden;
+        padding: 24px;
       }
-      #chat-window {
-        flex-grow: 3;
-        padding: 20px;
-        border-right: 1px solid #ddd;
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      header h1 {
+        font-size: 1.6rem;
+        margin: 0;
+        color: var(--text-main);
+      }
+
+      header span {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      /* Grid: two columns, left narrower */
+      #layout-grid {
+        display: grid;
+        grid-template-columns: 0.8fr 1.6fr;
+        gap: 20px;
+      }
+
+      .card {
+        background: var(--surface);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-soft);
+        padding: 16px 18px;
         display: flex;
         flex-direction: column;
       }
-      #status-panel {
-        flex-grow: 1;
-        min-width: 300px;
-        padding: 20px;
-        background: #e9f0f7;
-      }
-      h2 {
-        color: #004d99;
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 5px;
-      }
-      h3,
-      h4 {
-        color: #333;
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
       }
 
-      /* Message Display */
-      #message-display {
-        flex-grow: 1;
-        overflow-y: auto;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 10px;
+      .card-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-main);
         display: flex;
-        flex-direction: column;
-      }
-      .patient-message {
-        background: #d0e7ff;
-        padding: 12px;
-        border-radius: 18px 18px 18px 4px;
-        margin-bottom: 10px;
-        max-width: 75%;
-        align-self: flex-start;
-        line-height: 1.4;
-      }
-      .user-message {
-        background: #f0f0f0;
-        padding: 12px;
-        border-radius: 18px 18px 4px 18px;
-        margin-bottom: 10px;
-        max-width: 75%;
-        align-self: flex-end;
-        line-height: 1.4;
+        align-items: center;
+        gap: 6px;
       }
 
-      /* Input Form */
-      #input-form {
+      .card-title .material-icons {
+        font-size: 18px;
+        color: var(--primary);
+      }
+
+      .card-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      /* Patient Information card */
+      #patient-info-body {
+        font-size: 0.9rem;
+        color: var(--text-main);
+      }
+
+      #patient-info-body p {
+        margin: 2px 0;
+      }
+
+      #chief-complaint-pill {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        background: #ffebee;
+        color: var(--error);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
+      }
+
+      #patient-placeholder {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .case-select-row {
         display: flex;
+        gap: 8px;
         margin-top: 10px;
       }
-      #user-input {
-        flex-grow: 1;
-        padding: 12px;
-        border: 1px solid #007bff;
-        border-radius: 6px 0 0 6px;
-        font-size: 16px;
+
+      #case-selector {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid #d0c4ff;
+        font-size: 0.9rem;
+        outline: none;
       }
-      #send-btn {
-        padding: 12px 20px;
-        background: #007bff;
-        color: white;
+
+      #start-simulation-btn {
+        padding: 8px 14px;
+        border-radius: 999px;
         border: none;
+        background: var(--primary);
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
         cursor: pointer;
-        border-radius: 0 6px 6px 0;
-        font-size: 16px;
-        transition: background 0.2s;
+        transition: background 0.2s ease;
+        white-space: nowrap;
       }
-      #send-btn:hover:not(:disabled) {
-        background: #0056b3;
-      }
-      #send-btn:disabled {
-        background: #ccc;
+
+      #start-simulation-btn:disabled {
+        background: #c9c4d9;
         cursor: not-allowed;
       }
 
-      /* Status Panel Components */
-      .status-section {
-        margin-bottom: 20px;
-        padding: 15px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      #start-simulation-btn:not(:disabled):hover {
+        background: var(--primary-dark);
       }
-      #progress-bar {
+
+      /* Performance Score card */
+      #score-big {
+        font-size: 2.4rem;
+        font-weight: 500;
+        margin: 4px 0 0;
+      }
+
+      #score-label {
+        margin-top: 4px;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .label-bad {
+        background: #ffebee;
+        color: var(--error);
+      }
+
+      .label-ok {
+        background: #fff8e1;
+        color: #b26a00;
+      }
+
+      .label-good {
+        background: #e8f5e9;
+        color: #1b5e20;
+      }
+
+      .score-caption {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        margin-bottom: 10px;
+      }
+
+      .progress-track {
         width: 100%;
-        height: 25px;
-        background-color: #ddd;
-        border-radius: 12px;
-        margin-top: 10px;
+        height: 8px;
+        border-radius: 999px;
+        background: #eee6ff;
         overflow: hidden;
       }
-      #progress-fill {
+
+      .progress-fill {
         height: 100%;
         width: 0%;
-        background-color: #28a745; /* Success Green */
-        border-radius: 12px;
-        transition: width 0.5s ease-in-out;
-        text-align: center;
-        line-height: 25px;
-        color: white;
-        font-weight: bold;
-      }
-      #live-feedback {
-        font-style: italic;
-        color: #cc0000;
-        font-weight: bold;
+        border-radius: 999px;
+        background: var(--primary-light);
+        transition: width 0.4s ease;
       }
 
-      /* Case Selection */
-      #case-selector {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
+      /* Conversation card */
+      #conversation-card {
+        min-height: 320px;
       }
-      #start-simulation-btn {
-        width: 100%;
-        padding: 10px;
-        background: #ffc107; /* Yellow/Orange for start */
-        color: #333;
+
+      #case-title-chip {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      #message-display {
+        flex: 1;
+        margin-top: 8px;
+        padding: 8px;
+        border-radius: 12px;
+        background: #f8f3ff;
+        overflow-y: auto;
+        max-height: 380px;
+      }
+
+      .message-row {
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 10px;
+      }
+
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: #fff;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+
+      .avatar-patient {
+        background: var(--primary);
+      }
+
+      .avatar-user {
+        background: #ff9800;
+      }
+
+      .bubble {
+        max-width: 70%;
+        padding: 8px 12px;
+        border-radius: 18px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .bubble-patient {
+        border-bottom-left-radius: 4px;
+        background: #e3d7ff;
+      }
+
+      .bubble-user {
+        border-bottom-right-radius: 4px;
+        background: #ffffff;
+      }
+
+      .message-row.user {
+        justify-content: flex-end;
+      }
+
+      .message-row.user .avatar {
+        order: 2;
+        margin-right: 0;
+        margin-left: 6px;
+      }
+
+      .message-row.user .bubble {
+        order: 1;
+      }
+
+      .timestamp {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .timestamp-container {
+        margin-left: 34px;
+        margin-right: 34px;
+        margin-bottom: 4px;
+      }
+
+      #typing-indicator {
+        font-size: 0.8rem;
+        font-style: italic;
+        color: var(--text-muted);
+        margin: 6px 0 2px;
+        display: none;
+      }
+
+      #triage-input-row {
+        display: flex;
+        margin-top: 10px;
+        gap: 8px;
+      }
+
+      #user-input {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid #d0c4ff;
+        font-size: 0.9rem;
+        outline: none;
+      }
+
+      #send-btn {
+        padding: 10px 16px;
+        border-radius: 999px;
         border: none;
-        border-radius: 4px;
+        background: var(--primary);
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
         cursor: pointer;
-        font-weight: bold;
         transition: background 0.2s;
       }
-      #start-simulation-btn:hover:not(:disabled) {
-        background: #e0a800;
-      }
-      #start-simulation-btn:disabled {
-        background: #ccc;
+
+      #send-btn:disabled {
+        background: #c9c4d9;
         cursor: not-allowed;
+      }
+
+      #send-btn:not(:disabled):hover {
+        background: var(--primary-dark);
+      }
+
+      /* Voice control card */
+      #voice-status {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 8px;
+        min-height: 18px;
+      }
+
+      #voice-transcript {
+        font-size: 0.9rem;
+        color: var(--text-main);
+        margin-top: 6px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: #f3edf7;
+        min-height: 32px;
+      }
+
+      #voice-record-btn {
+        margin-top: 8px;
+        align-self: flex-start;
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: none;
+        background: var(--primary);
+        color: white;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.2s, box-shadow 0.2s;
+        box-shadow: 0 3px 6px rgba(98, 0, 238, 0.3);
+      }
+
+      #voice-record-btn .material-icons {
+        font-size: 18px;
+      }
+
+      #voice-record-btn.recording {
+        background: var(--error);
+        box-shadow: 0 3px 6px rgba(176, 0, 32, 0.3);
+      }
+
+      #voice-record-btn:disabled {
+        background: #c9c4d9;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 960px) {
+        #layout-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="app-container">
-      <div id="status-panel">
-        <h2>🩺 Triage Training Panel</h2>
+    <div id="app-shell">
+      <header>
+        <div>
+          <h1>AI Triage Companion</h1>
+          <span>Simulated triage conversations for premed training</span>
+        </div>
+      </header>
 
-        <div class="status-section">
-          <h4>Case Selection</h4>
-          <select id="case-selector" disabled>
-            <option value="">--- Select Patient Case ---</option>
+      <div id="layout-grid">
+        <!-- LEFT COLUMN -->
+        <div class="left-column">
+          <!-- Patient Information card -->
+          <section class="card" id="patient-info-card">
+            <div class="card-header">
+              <div class="card-title">
+                <span class="material-icons">person</span>
+                Patient Information
+              </div>
+            </div>
 
-            {% for case in cases %}
-            <option value="{{ case.id }}">
-              {{ case.name }} ({{ case.complaint }})
-            </option>
-            {% endfor %}
-          </select>
-          <button id="start-simulation-btn" disabled>Start Simulation</button>
-          <p style="font-size: 0.85em; margin-top: 10px">
-            Select a case to begin. Conversation history resets on start.
-          </p>
+            <div class="card-subtitle">
+              Select a patient case to populate details.
+            </div>
+
+            <div class="case-select-row">
+              <select id="case-selector">
+                <option value="">Select patient case</option>
+                {% for case in cases %}
+                <option value="{{ case.id }}">{{ case.name }} ({{ case.complaint }})</option>
+                {% endfor %}
+              </select>
+              <button id="start-simulation-btn" disabled>Start</button>
+            </div>
+
+            <div id="patient-info-body" style="margin-top: 12px;">
+              <div id="patient-placeholder">
+                No patient selected yet.
+              </div>
+              <div id="patient-details" style="display: none;">
+                <p><strong>Name:</strong> <span id="p-name"></span></p>
+                <p><strong>Age:</strong> <span id="p-age"></span></p>
+                <p><strong>Sex:</strong> <span id="p-sex"></span></p>
+                <p><strong>Arrival:</strong> <span id="p-arrival"></span></p>
+                <div id="chief-complaint-pill">
+                  Chief Complaint: <span id="p-complaint"></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Performance Score card -->
+          <section class="card" id="score-card" style="margin-top: 16px;">
+            <div class="card-header">
+              <div class="card-title">
+                <span class="material-icons">leaderboard</span>
+                Performance Score
+              </div>
+            </div>
+
+            <div>
+              <div id="score-big">0</div>
+              <div class="score-caption">out of 100</div>
+              <span id="score-label" class="label-bad">Needs Improvement</span>
+
+              <div style="margin-top: 16px;">
+                <div
+                  style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;"
+                >
+                  <span>Progress</span>
+                  <span id="progress-text">0%</span>
+                </div>
+                <div class="progress-track">
+                  <div id="progress-fill" class="progress-fill"></div>
+                </div>
+              </div>
+
+              <div
+                style="margin-top: 12px; font-size: 0.8rem; color: var(--text-muted);"
+              >
+                Real-time feedback: <span id="live-feedback">Simulation not started.</span>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <div class="status-section">
-          <h4>📊 Real-Time Status</h4>
-          <p>
-            <strong>Patient:</strong>
-            <span id="patient-name" style="font-weight: bold">---</span>
-          </p>
-          <p>
-            <strong>ESI Goal:</strong> Level
-            <span id="esi-goal" style="font-weight: bold">---</span>
-          </p>
+        <!-- RIGHT COLUMN -->
+        <div class="right-column">
+          <!-- Conversation Transcript card -->
+          <section class="card" id="conversation-card">
+            <div class="card-header">
+              <div class="card-title">
+                <span class="material-icons">chat_bubble</span>
+                Conversation Transcript
+              </div>
+              <span id="case-title-chip">No case active</span>
+            </div>
 
-          <h4 style="margin-top: 15px">
-            Performance Score: <span id="performance-score">0</span> / 100
-          </h4>
-          <div id="progress-bar">
-            <div id="progress-fill">0%</div>
-          </div>
+            <div id="message-display">
+              <div style="font-size: 0.9rem; color: var(--text-muted);">
+                Select a patient and start the simulation to begin triage.
+              </div>
+            </div>
 
-          <p style="margin-top: 15px">
-            <strong>Live Feedback:</strong>
-            <span id="live-feedback">Simulation not started.</span>
-          </p>
+            <div id="typing-indicator">Patient is responding…</div>
+
+            <form id="input-form" autocomplete="off">
+              <div id="triage-input-row">
+                <input
+                  id="user-input"
+                  type="text"
+                  placeholder="Type your triage question..."
+                  required
+                  disabled
+                />
+                <button id="send-btn" type="submit" disabled>Send</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Voice Control card -->
+          <section class="card" id="voice-card" style="margin-top: 16px;">
+            <div class="card-header">
+              <div class="card-title">
+                <span class="material-icons">mic</span>
+                Voice Control
+              </div>
+            </div>
+
+            <div class="card-subtitle">
+              Press "Start Recording" and speak your triage question. Your
+              speech will be transcribed and sent as a message.
+            </div>
+
+            <button id="voice-record-btn" disabled>
+              <span class="material-icons">mic</span>
+              Start Recording
+            </button>
+
+            <div id="voice-status">Voice control will activate after a case starts.</div>
+            <div id="voice-transcript"></div>
+          </section>
         </div>
-      </div>
-
-      <div id="chat-window">
-        <h2>
-          Case: <span id="current-case-title">Select a Case to Begin</span>
-        </h2>
-        <div id="message-display">
-          <p
-            class="patient-message"
-            style="align-self: center; background: #eee"
-          >
-            **Welcome to the Triage Training Companion.**<br />
-            Please select a patient case from the panel on the left and click
-            'Start Simulation'.
-          </p>
-        </div>
-        <form id="input-form">
-          <input
-            type="text"
-            id="user-input"
-            placeholder="Ask your triage question (e.g., When did the pain start?)"
-            required
-            disabled
-          />
-          <button type="submit" id="send-btn" disabled>Send</button>
-        </form>
       </div>
     </div>
 
     <script>
       let currentSessionId = null;
-      const inputForm = document.getElementById("input-form");
+
+      // DOM elements
+      const caseSelector = document.getElementById("case-selector");
+      const startBtn = document.getElementById("start-simulation-btn");
+
+      const pPlaceholder = document.getElementById("patient-placeholder");
+      const pDetails = document.getElementById("patient-details");
+      const pName = document.getElementById("p-name");
+      const pAge = document.getElementById("p-age");
+      const pSex = document.getElementById("p-sex");
+      const pArrival = document.getElementById("p-arrival");
+      const pComplaint = document.getElementById("p-complaint");
+
+      const scoreBig = document.getElementById("score-big");
+      const scoreLabel = document.getElementById("score-label");
+      const progressFill = document.getElementById("progress-fill");
+      const progressText = document.getElementById("progress-text");
+      const liveFeedbackSpan = document.getElementById("live-feedback");
+
+      const caseTitleChip = document.getElementById("case-title-chip");
       const messageDisplay = document.getElementById("message-display");
+      const typingIndicator = document.getElementById("typing-indicator");
+      const inputForm = document.getElementById("input-form");
       const userInput = document.getElementById("user-input");
       const sendBtn = document.getElementById("send-btn");
-      const startBtn = document.getElementById("start-simulation-btn");
-      const caseSelector = document.getElementById("case-selector");
 
-      // Status Panel Elements
-      const scoreSpan = document.getElementById("performance-score");
-      const progressBarFill = document.getElementById("progress-fill");
-      const liveFeedbackSpan = document.getElementById("live-feedback");
-      const patientNameSpan = document.getElementById("patient-name");
-      const esiGoalSpan = document.getElementById("esi-goal");
-      const caseTitleSpan = document.getElementById("current-case-title");
+      const voiceBtn = document.getElementById("voice-record-btn");
+      const voiceStatus = document.getElementById("voice-status");
+      const voiceTranscript = document.getElementById("voice-transcript");
 
-      // Initial setup to enable controls once cases are loaded
-      document.addEventListener("DOMContentLoaded", () => {
-        // Check if Flask loaded any cases (via the Jinja template loop)
-        if (caseSelector.options.length > 1) {
-          caseSelector.disabled = false;
-          startBtn.disabled = false;
-          caseSelector.options[0].textContent = "--- Select Patient Case ---";
-        }
+      // Enable start button when a case is chosen
+      caseSelector.addEventListener("change", () => {
+        startBtn.disabled = !caseSelector.value;
       });
 
-      // Helper function to append a message to the chat
-      function appendMessage(role, text) {
-        const div = document.createElement("div");
-        div.className = role === "user" ? "user-message" : "patient-message";
-        div.textContent = text;
-        messageDisplay.appendChild(div);
-        messageDisplay.scrollTop = messageDisplay.scrollHeight; 
+      // Helper: formatted time
+      function formatTime(date = new Date()) {
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       }
 
-      // Function to update the score display and progress bar
+      // Helper: append message to transcript
+      function appendMessage(role, text, timestamp = null) {
+        if (!timestamp) timestamp = formatTime();
+
+        const row = document.createElement("div");
+        row.className = "message-row " + (role === "user" ? "user" : "patient");
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar " + (role === "user" ? "avatar-user" : "avatar-patient");
+        avatar.textContent = role === "user" ? "U" : "P";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + (role === "user" ? "bubble-user" : "bubble-patient");
+        bubble.textContent = text;
+
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+
+        const tsRow = document.createElement("div");
+        tsRow.className = "timestamp-container";
+        const tsLabel = document.createElement("div");
+        tsLabel.className = "timestamp";
+        tsLabel.textContent = timestamp;
+        tsRow.appendChild(tsLabel);
+
+        messageDisplay.appendChild(row);
+        messageDisplay.appendChild(tsRow);
+        messageDisplay.scrollTop = messageDisplay.scrollHeight;
+      }
+
+      // Helper: update score + label + bar
       function updateScore(score, feedback) {
-        scoreSpan.textContent = score;
-        // Cap score at 100 for display
-        const progress = Math.min(score, 100);
-        progressBarFill.style.width = progress + "%";
-        progressBarFill.textContent = progress + "%";
+        scoreBig.textContent = score;
+        const pct = Math.max(0, Math.min(100, score));
+        progressFill.style.width = pct + "%";
+        progressText.textContent = pct + "%";
         liveFeedbackSpan.textContent = feedback || "Awaiting key finding...";
 
-        // Change color for high score
-        progressBarFill.style.backgroundColor =
-          progress >= 75 ? "#157347" : "#28a745";
-      }
+        let labelText = "Needs Improvement";
+        let labelClass = "label-bad";
 
-      // 1. START SIMULATION
-      startBtn.addEventListener("click", async () => {
-        const caseId = caseSelector.value;
-        if (!caseId) {
-          alert("Please select a patient case first!");
-          return;
+        if (pct >= 75) {
+          labelText = "Strong Performance";
+          labelClass = "label-good";
+        } else if (pct >= 40) {
+          labelText = "On Track";
+          labelClass = "label-ok";
         }
 
-        // Lock controls during fetch
+        scoreLabel.textContent = labelText;
+        scoreLabel.className = "";
+        scoreLabel.classList.add(labelClass);
+        scoreLabel.id = "score-label"; // keep id
+      }
+
+      // START SIMULATION
+      startBtn.addEventListener("click", async () => {
+        const caseId = caseSelector.value;
+        if (!caseId) return;
+
         startBtn.disabled = true;
         caseSelector.disabled = true;
         userInput.disabled = true;
         sendBtn.disabled = true;
+        voiceBtn.disabled = true;
+        voiceStatus.textContent = "Preparing simulation...";
 
         try {
           const response = await fetch("/start", {
@@ -317,61 +690,137 @@
           if (data.session_id) {
             currentSessionId = data.session_id;
 
-            // Reset UI
-            messageDisplay.innerHTML = "";
-            caseTitleSpan.textContent = `${data.patient_name} - ESI Level ${data.esi_goal}`;
-            patientNameSpan.textContent = data.patient_name;
-            esiGoalSpan.textContent = `Level ${data.esi_goal}`;
+            // Populate patient info
+            pPlaceholder.style.display = "none";
+            pDetails.style.display = "block";
+            pName.textContent = data.patient_name;
+            pAge.textContent = `${data.age} years`;
+            pSex.textContent = data.sex;
+            pArrival.textContent = data.arrival_time;
+            pComplaint.textContent = data.chief_complaint;
 
-            // Enable interaction
+            // Reset score
+            updateScore(data.initial_score, "Simulation started. Listen to the patient and ask your first question.");
+
+            // Reset conversation
+            messageDisplay.innerHTML = "";
+            appendMessage("patient", data.patient_text);
+            caseTitleChip.textContent = `${data.patient_name} · ESI Level ${data.esi_goal}`;
+
+            // Enable typing + voice
             userInput.disabled = false;
             sendBtn.disabled = false;
+            voiceBtn.disabled = false;
+            voiceStatus.textContent = "Ready. Press Start Recording to speak.";
 
-            updateScore(
-              data.initial_score,
-              "Simulation started. Listen to the patient and ask your first question."
-            );
-            appendMessage("patient", data.patient_text);
             userInput.focus();
-            startBtn.textContent = "Restart Simulation";
+            startBtn.textContent = "Restart";
           } else {
-            alert(
-              "Error starting session: " + (data.error || "Unknown error.")
-            );
+            alert("Error starting session: " + (data.error || "Unknown error"));
+            caseSelector.disabled = false;
           }
-        } catch (error) {
-          alert(
-            "Network error or server connection failed. See console for details."
-          );
-          console.error("Start session error:", error);
-        } finally {
-          // Unlock only if successful, or prepare to allow restart
-          startBtn.disabled = false;
+        } catch (err) {
+          console.error("Start error", err);
+          alert("Network error when starting simulation.");
           caseSelector.disabled = false;
+        } finally {
+          startBtn.disabled = false;
         }
       });
 
-      // 2. CONVERSATIONAL TURN
-      inputForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
+
+        // Setup MediaRecorder
+      let mediaRecorder = null;
+      let audioChunks = [];
+
+      async function initMediaRecorder() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = async () => {
+            console.log("Recorder state:", mediaRecorder.state, 
+            "Stream active:", mediaRecorder.stream.active);
+            const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            audioChunks = [];
+            voiceStatus.textContent = "Uploading audio…";
+            try {
+              const form = new FormData();
+              form.append('session_id', currentSessionId);
+              form.append('audio', blob, 'triage_question.' + (blob.type.split('/')[1] || 'webm'));
+
+              const resp = await fetch('/transcribe_audio', {
+                method: 'POST',
+                body: form
+              });
+
+              const data = await resp.json();
+              if (data.transcript) {
+                voiceTranscript.textContent = data.transcript;
+                voiceStatus.textContent = "Transcription received. Sending...";
+                // Send the transcript to the triage endpoint
+                await sendMessageToBackend(data.transcript);
+              } else {
+                voiceStatus.textContent = "Transcription failed: " + (data.error || 'no transcript');
+              }
+
+            } catch (err) {
+              console.error("Audio upload error:", err);
+              voiceStatus.textContent = "Upload error.";
+            }
+          };
+
+        } catch (err) {
+          console.error("getUserMedia error:", err);
+          voiceStatus.textContent = "Microphone access denied or not supported.";
+          voiceBtn.disabled = true;
+        }
+      }
+
+      // Initialize right away
+      initMediaRecorder();
+
+      voiceBtn.addEventListener('click', async () => {
+        if (!mediaRecorder || !currentSessionId) {
+          return;
+        }
+        if (mediaRecorder.state === 'inactive') {
+          audioChunks = [];
+          mediaRecorder.start();
+          voiceBtn.classList.add('recording');
+          voiceBtn.innerHTML = '<span class="material-icons">stop</span>Stop Recording';
+          voiceStatus.textContent = "Recording… speak now.";
+        } else if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          voiceBtn.classList.remove('recording');
+          voiceBtn.innerHTML = '<span class="material-icons">mic</span>Start Recording';
+          voiceStatus.textContent = "Processing audio…";
+        }
+      });
+
+      // SEND MESSAGE (typed or voice)
+      async function sendMessageToBackend(text) {
         if (!currentSessionId) return;
+        if (!text.trim()) return;
 
-        const userText = userInput.value;
-        if (!userText.trim()) return;
-
-        appendMessage("user", userText);
+        appendMessage("user", text);
         userInput.value = "";
-        sendBtn.disabled = true;
         userInput.disabled = true;
+        sendBtn.disabled = true;
+        typingIndicator.style.display = "block";
 
         try {
           const response = await fetch("/triage", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              session_id: currentSessionId,
-              message: userText,
-            }),
+            body: JSON.stringify({ session_id: currentSessionId, message: text }),
           });
 
           const data = await response.json();
@@ -380,23 +829,100 @@
             appendMessage("patient", data.patient_text);
             updateScore(data.current_score, data.real_time_feedback);
           } else {
-            appendMessage(
-              "patient",
-              "Error: Could not get response from AI. Try refreshing the page or restarting the simulation."
-            );
+            appendMessage("patient", "Error: Could not get response from AI.");
           }
-        } catch (error) {
-          appendMessage(
-            "patient",
-            "Network error or server connection failed."
-          );
-          console.error("Triage turn error:", error);
+        } catch (err) {
+          console.error("Triage turn error", err);
+          appendMessage("patient", "Network error or server connection failed.");
         } finally {
-          sendBtn.disabled = false;
+          typingIndicator.style.display = "none";
           userInput.disabled = false;
+          sendBtn.disabled = false;
           userInput.focus();
         }
+      }
+
+      // Typed input handler
+      inputForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = userInput.value;
+        sendMessageToBackend(text);
       });
+
+      // Voice control using Google API
+
+      let recognition = null;
+      let isRecording = false;
+
+      function setupRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          voiceStatus.textContent = "Speech recognition not supported";
+          voiceBtn.disabled = true;
+          return;
+        }
+        recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          isRecording = true;
+          voiceBtn.classList.add("recording");
+          voiceBtn.innerHTML = '<span class="material-icons">stop</span>Stop Recording';
+          voiceStatus.textContent = "Listening…";
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          voiceTranscript.textContent = transcript;
+          voiceStatus.textContent = "Transcription done, sending…";
+          // Instead: we send audio blob instead of straightforward transcript if you prefer
+          sendAudioToBackend(transcript);  // optionally skip audio upload
+        };
+
+        recognition.onerror = (event) => {
+          voiceStatus.textContent = "Error: " + event.error;
+        };
+
+        recognition.onend = () => {
+          isRecording = false;
+          voiceBtn.classList.remove("recording");
+          voiceBtn.innerHTML = '<span class="material-icons">mic</span>Start Recording';
+          voiceStatus.textContent = "Ready to record.";
+        };
+      }
+
+      setupRecognition();
+
+      voiceBtn.addEventListener("click", () => {
+        if (!recognition || !currentSessionId) return;
+        if (!isRecording) {
+          recognition.start();
+        } else {
+          recognition.stop();
+        }
+      });
+
+      // Alternative: Upload actual audio blob (for higher fidelity)
+      async function sendAudioToBackend(transcriptFallback) {
+        if (!currentSessionId) return;
+        // If you captured blob via MediaRecorder, use that; here we fallback to transcript
+        if (!transcriptFallback.trim()) return;
+
+        try {
+          // If you recorded AudioBlob, then:
+          // const form = new FormData();
+          // form.append('session_id', currentSessionId);
+          // form.append('audio', blob, 'triage_question.wav');
+
+          // Using fallback transcript:
+          await sendMessageToBackend(transcriptFallback);
+        } catch (err) {
+          console.error("Audio upload error", err);
+          voiceStatus.textContent = "Upload error";
+        }
+      }
     </script>
   </body>
 </html>
