@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from google import genai
 from google.genai import types
+import time
 
 
 # Load environment variables
@@ -110,6 +111,7 @@ PATIENT_CASES = {
     
 }
 
+
 def remove_bracketed_text(text):
     # Removes anything inside (), [], {}, <> including nested cases
     return re.sub(r'\s*[\(\[\{<][^)\]\}>]*[\)\]\}>]\s*', ' ', text).strip()
@@ -159,8 +161,7 @@ def start_new_triage_session(case_id):
         scoring_rule=case_data["scoring_rule"]
     )
 
-    chat = client.chats.create(model=MODEL_NAME)
-    chat.send_message(full_prompt)
+    chat = create_chat_with_retry(full_prompt)
 
     session_id = str(uuid.uuid4())
 
@@ -177,6 +178,37 @@ def start_new_triage_session(case_id):
     }
 
     return session_id, case_data["initial_line"], case_data, arrival_time
+
+def create_chat_with_retry(full_prompt, max_retries=6, base_delay=0.5):
+    """
+    Create a Gemini chat with simple retry logic to handle 503 (model overloaded) errors.
+    """
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            chat = client.chats.create(model=MODEL_NAME)
+            chat.send_message(full_prompt)
+            return chat  # success
+        except Exception as e:
+            last_error = e
+            msg = str(e)
+
+            # Only retry on overload-ish errors
+            if "503" in msg or "UNAVAILABLE" in msg or "model is overloaded" in msg:
+                if attempt < max_retries - 1:
+                    # Exponential-ish backoff: 0.5s, 1s, 2s ...
+                    time.sleep(base_delay * (2 ** attempt))
+                    continue  # try again
+                else:
+                    break  # out of retries, return last error
+            else:
+                # Different error (bad key, invalid request, etc.) – don't keep retrying
+                raise
+
+    # If we get here, all retries failed
+    raise last_error
+
 
 # --- API Endpoints ---
 @app.route('/')
