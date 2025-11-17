@@ -1,12 +1,12 @@
 # How to run the triage companion
 
-1. Navigate to your project folder
+**1. Clone repo and Navigate to your project folder**
 
 Clone this git repository and open a terminal (macOS/Linux) or Command Prompt/PowerShell (Windows) and change to your project directory:
 ```
 cd path/to/cloned/repo
 ```
-2. Create the virtual environment
+**2. Create the virtual environment**
 
 Use the built-in venv module. 
 
@@ -22,7 +22,7 @@ py -m venv venv
 
 This creates a folder named venv (you can choose a different name) containing the isolated Python environment.
 
-3. Activate the virtual environment
+**3. Activate the virtual environment**
 
 Activating ensures that any python or pip commands refer to this environment. 
 Python Packaging
@@ -44,7 +44,7 @@ Windows (PowerShell)
 
 When activated, your prompt will typically include (venv) as a prefix, indicating you are inside the environment.
 
-4. Install dependencies from requirements.txt
+**4. Install dependencies from requirements.txt**
 
 Assuming you’ve created requirements.txt with all needed packages:
 ```
@@ -53,9 +53,9 @@ pip install -r requirements.txt
 
 This installs all the exact versions of libraries your project needs.
 
-5. Run the application
+**5. Run the application**
 
-Then you can execute your Flask app (or whatever entry script you have) while the virtual environment is active:
+Then you can run the application:
 ```
 python app.py
 
