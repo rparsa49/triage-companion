@@ -8,6 +8,7 @@ from flask import Flask, request, jsonify, render_template
 from google import genai
 from google.genai import types
 
+
 # Load environment variables
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -74,7 +75,9 @@ PATIENT_CASES = {
     }
 }
 
-
+def remove_bracketed_text(text):
+    # Removes anything inside (), [], {}, <> including nested cases
+    return re.sub(r'\s*[\(\[\{<][^)\]\}>]*[\)\]\}>]\s*', ' ', text).strip()
 
 # Parse Gemini Response
 def parse_gemini_response(raw_text, current_score):
@@ -264,6 +267,70 @@ def transcribe_audio():
 
     except Exception as e:
         return jsonify({'error': f"Error during transcription: {str(e)}"}), 500
+    
+@app.route('/synthesize_speech', methods=['POST'])
+def synthesize_speech():
+    """Converts patient text into speech using Gemini TTS and returns base64 WAV audio."""
+    data = request.json or {}
+    text_raw = (data.get("text") or "").strip()
+    text = remove_bracketed_text(text_raw)
+
+
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+
+    try:
+        # Call Gemini TTS model (PCM16 output)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents=text,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name="Kore"
+                        )
+                    )
+                ),
+            ),
+        )
+
+        # Get the inline audio data (PCM16)
+        part = response.candidates[0].content.parts[0]
+        inline = getattr(part, "inline_data", None)
+
+        if not inline or inline.data is None:
+            print("TTS: No inline_data in response:", response)
+            return jsonify({"error": "No audio data in TTS response"}), 500
+
+        pcm_bytes = inline.data  # raw PCM16 from Gemini
+        mime_in = inline.mime_type or "audio/L16;codec=pcm;rate=24000"
+
+        # Wrap PCM into a WAV container so the browser can play it
+        import io
+        import wave
+        import base64
+
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as wf:
+            wf.setnchannels(1)      # mono
+            wf.setsampwidth(2)      # 16-bit
+            wf.setframerate(24000)  # 24 kHz
+            wf.writeframes(pcm_bytes)
+
+        wav_bytes = buffer.getvalue()
+        audio_b64 = base64.b64encode(wav_bytes).decode("utf-8")
+
+        return jsonify({
+            "audio_base64": audio_b64,
+            "mime_type": "audio/wav"
+        })
+
+    except Exception as e:
+        print("TTS error:", e)
+        return jsonify({"error": f"TTS synthesis failed: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     print(f"Starting Triage Companion Backend on [http://127.0.0.1:5000](http://127.0.0.1:5000)")

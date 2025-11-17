@@ -666,6 +666,35 @@
         scoreLabel.id = "score-label"; // keep id
       }
 
+      async function speakPatientMessage(text) {
+      try {
+        const resp = await fetch("/synthesize_speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        const data = await resp.json();
+        console.log("TTS response:", data);
+
+        if (data.audio_base64) {
+          const mime = data.mime_type || "audio/wav";
+          const audio = new Audio(`data:${mime};base64,${data.audio_base64}`);
+          audio.play().catch(err => {
+            console.error("Audio play error:", err);
+          });
+        } else if (data.error) {
+          console.warn("TTS server error:", data.error);
+        } else {
+          console.warn("No audio_base64 in TTS response");
+        }
+      } catch (err) {
+        console.error("TTS fetch/playback error:", err);
+      }
+    }
+
+
+
       // START SIMULATION
       startBtn.addEventListener("click", async () => {
         const caseId = caseSelector.value;
@@ -705,6 +734,7 @@
             // Reset conversation
             messageDisplay.innerHTML = "";
             appendMessage("patient", data.patient_text);
+            speakPatientMessage(data.patient_text);
             caseTitleChip.textContent = `${data.patient_name} · ESI Level ${data.esi_goal}`;
 
             // Enable typing + voice
@@ -827,6 +857,7 @@
 
           if (data.patient_text) {
             appendMessage("patient", data.patient_text);
+            speakPatientMessage(data.patient_text);
             updateScore(data.current_score, data.real_time_feedback);
           } else {
             appendMessage("patient", "Error: Could not get response from AI.");
