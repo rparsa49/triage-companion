@@ -30,7 +30,7 @@ Your chief complaint is: {chief_complaint}.
 1. **Be Conversational:** Respond naturally, reflecting your age, anxiety, and symptoms.
 2. **Be Truthful:** Only provide information the student asks for, based on your profile.
 3. **Do NOT** volunteer the diagnosis, ESI level, or scoring information.
-4. **Hot Clues (Student earns points):** {hot_clues}.
+4. **Hot Clues (Student earns points):** {hot_clues}. Each Hot Clues adds to the current score. 
 5. **Cold Clues (Student loses points/wastes time):** Asking irrelevant questions or ordering unnecessary tests.
 
 **Scoring Rule for the AI:** {scoring_rule}
@@ -52,13 +52,14 @@ PATIENT_CASES = {
 
         "hot_clues": (
             "'fever', 'dysuria or urinary frequency', 'incomplete bladder emptying', "
-            "'nausea/vomiting', 'CVA tenderness', 'pregnancy status', 'hydration status'."
+            "'nausea/vomiting', 'CVA tenderness', 'emergency', 'urgent', 'pregnancy status', 'hydration status'."
         ),
 
         "scoring_rule": (
             "Award +40 points for asking about fever pattern, urinary symptoms, vomiting severity, "
             "or flank/CVA tenderness. "
             "Award +30 points for confirming pregnancy complications (vaginal bleeding, fetal movement, OB history). "
+            "Award +30 points for identifying urgency of situation and directing patient to emergency care" 
             "Deduct -20 points for ignoring red flags like high fever, tachycardia, dehydration, or flank pain."
         ),
     },
@@ -77,13 +78,14 @@ PATIENT_CASES = {
         "hot_clues": (
             "'fever', 'rapid progression of redness', 'erythema borders', 'lymphangitic streaking', "
             "'leg swelling asymmetry', 'recent saphenous vein harvest', 'diabetes history', "
-            "'pain out of proportion', 'crepitus', 'bullae'."
+            "'pain out of proportion', 'crepitus', 'bullae', 'urgent', 'emergency'."
         ),
 
         "scoring_rule": (
             "Award +40 points for asking about rate of progression, fever/chills, prior skin breaks, "
             "or history of saphenous vein harvest. "
             "Award +30 points for distinguishing cellulitis versus DVT (calf asymmetry, tenderness, risk factors). "
+            "Award +30 points for identifying urgency of situation and directing patient to emergency care" 
             "Deduct -20 points for failing to evaluate for necrotizing soft tissue infection (pain severity, crepitus). "
             "Deduct -15 points for ignoring cardiovascular or diabetes-related complications."
         ),
@@ -105,12 +107,16 @@ PATIENT_CASES = {
             "Award +30 points for asking about physical exam signs (scoliosis screening, Adam’s forward-bend test), "
             "or family history, or neurologic symptoms. "
             "Award +20 points for ruling out red-flag symptoms (night pain, weight loss, bowel/bladder changes). "
+            "Award +30 points for identifying moderate urgency of situation and directing to specialty or outpatient department "
+            "unless key red flags emerge, which then needs urgent care" 
             "Deduct –15 points for focusing only on pain severity and ignoring structural assessment."
         )
     }
     
 }
 
+MAX_SCORE = 100
+MIN_SCORE = 0
 
 def remove_bracketed_text(text):
     # Removes anything inside (), [], {}, <> including nested cases
@@ -135,7 +141,9 @@ def parse_gemini_response(raw_text, current_score):
             scoring_data = json.loads(score_match.group(1))
 
             # Update values based on the extracted JSON
-            new_score = scoring_data.get('score_update', current_score)
+            delta = scoring_data.get('score_update', 0)
+            new_score = current_score + delta
+            new_score = max(MIN_SCORE, min(MAX_SCORE, new_score))
             clue_status = scoring_data.get(
                 'hot_clue_status', 'Feedback received.')
 
