@@ -115,6 +115,8 @@ PATIENT_CASES = {
     
 }
 
+MAX_SCORE = 100
+MIN_SCORE = 0
 
 def remove_bracketed_text(text):
     # Removes anything inside (), [], {}, <> including nested cases
@@ -141,6 +143,7 @@ def parse_gemini_response(raw_text, current_score):
             # Update values based on the extracted JSON
             delta = scoring_data.get('score_update', 0)
             new_score = current_score + delta
+            new_score = max(MIN_SCORE, min(MAX_SCORE, new_score))
             clue_status = scoring_data.get(
                 'hot_clue_status', 'Feedback received.')
 
